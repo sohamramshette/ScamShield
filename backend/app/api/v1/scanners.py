@@ -118,28 +118,51 @@ async def scan_qr(
     response.threat_indicators = indicators
     return response
 
+from app.services.threat_intelligence import analyze_url, analyze_upi_id
+
 @router.post("/upi", response_model=UPIScanResponse, tags=["UPI Analyzer"])
 async def scan_upi(
     req: ScanRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Dummy mock for UPI scanning model as we don't have upi model yet. We use WebsiteScan as a proxy or just mock response.
-    # Wait, the app doesn't have a UPIScan model, let's just return a mock response for now, or use WebsiteScan
-    # Actually, we don't need a DB model if it wasn't requested, we just return the schema.
-    log_scan_started("mock_upi", "upi")
-    indicators_data = [{"indicator": "Valid UPI Format", "severity": "low"}]
+    from app.models.upi_scan import UPIScan
+    
+    new_scan = UPIScan(user_id=current_user.id, upi_id=req.target, status="running")
+    db.add(new_scan)
+    db.commit()
+    db.refresh(new_scan)
+
+    log_scan_started(str(new_scan.id), "upi")
+    indicators_data = analyze_upi_id(req.target)
     risk_score = calculate_risk_score(indicators_data)
     explanation, recommendation = await generate_explanation("upi", req.target, risk_score, indicators_data)
     
-    return UPIScanResponse(
-        id="mock-id",
-        status="completed",
-        upi_id=req.target,
-        risk_score=risk_score,
-        confidence=90,
-        ai_explanation=explanation,
-        recommendations=recommendation,
-        threat_indicators=[{"indicator": "Valid UPI Format", "severity": "low"}],
-        created_at="2026-07-17T00:00:00Z"
+    for ind in indicators_data:
+        db.add(ThreatIndicator(scan_id=new_scan.id, scan_type="upi", indicator=ind["indicator"], severity=ind["severity"]))
+
+    new_scan.status = "completed"
+    new_scan.risk_score = risk_score
+    new_scan.confidence = 90
+    new_scan.ai_explanation = explanation
+    new_scan.recommendations = recommendation
+
+    db.commit()
+    db.refresh(new_scan)
+    log_scan_completed(str(new_scan.id), "upi", risk_score)
+
+    indicators = db.query(ThreatIndicator).filter(ThreatIndicator.scan_id == new_scan.id, ThreatIndicator.scan_type == "upi").all()
+    
+    # Map to expected response schema
+    response = UPIScanResponse(
+        id=str(new_scan.id),
+        status=new_scan.status,
+        upi_id=new_scan.upi_id,
+        risk_score=new_scan.risk_score,
+        confidence=new_scan.confidence,
+        ai_explanation=new_scan.ai_explanation,
+        recommendations=new_scan.recommendations,
+        threat_indicators=[{"indicator": i.indicator, "severity": i.severity} for i in indicators],
+        created_at=new_scan.created_at
     )
+    return response

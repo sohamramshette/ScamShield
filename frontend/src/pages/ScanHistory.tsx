@@ -1,7 +1,59 @@
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Search, Filter, Download } from "lucide-react";
+import { Search, Filter, Download, Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
 
 const ScanHistory = () => {
+  const [scans, setScans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const data = await api.get("/history/");
+        setScans(data);
+      } catch (err: any) {
+        setError(err.message || "Failed to load history");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, []);
+
+  const getLevelColor = (score: number) => {
+    if (score >= 70) return "text-red-400 bg-red-400/10";
+    if (score >= 40) return "text-amber-400 bg-amber-400/10";
+    return "text-emerald-400 bg-emerald-400/10";
+  };
+
+  const getLevelText = (score: number) => {
+    if (score >= 70) return "Critical";
+    if (score >= 40) return "Warning";
+    return "Safe";
+  };
+
+  const handleDownload = async (scanId: number) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/history/report/${scanId}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to download PDF");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ScamShield_Report_${scanId}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Error downloading report.");
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto">
@@ -37,7 +89,25 @@ const ScanHistory = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-h-[300px] relative">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm z-10">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+              </div>
+            )}
+            
+            {error && (
+              <div className="p-4 m-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm text-center">
+                {error}
+              </div>
+            )}
+
+            {!loading && !error && scans.length === 0 && (
+              <div className="p-8 text-center text-slate-400">
+                No scan history found. Try scanning a website first!
+              </div>
+            )}
+
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-950/30 text-slate-400 text-sm border-b border-slate-800">
@@ -50,54 +120,29 @@ const ScanHistory = () => {
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {[
-                  {
-                    id: "SCN-8291",
-                    target: "login-secure-paypal.com",
-                    type: "Website",
-                    score: 85,
-                    level: "Critical",
-                    date: "2026-07-17",
-                    color: "text-red-400 bg-red-400/10",
-                  },
-                  {
-                    id: "SCN-8290",
-                    target: "Payment Gateway",
-                    type: "QR Code",
-                    score: 10,
-                    level: "Safe",
-                    date: "2026-07-17",
-                    color: "text-emerald-400 bg-emerald-400/10",
-                  },
-                  {
-                    id: "SCN-8289",
-                    target: "google.com",
-                    type: "Website",
-                    score: 0,
-                    level: "Safe",
-                    date: "2026-07-16",
-                    color: "text-emerald-400 bg-emerald-400/10",
-                  },
-                ].map((scan, i) => (
+                {scans.map((scan) => (
                   <tr
-                    key={i}
+                    key={scan.id}
                     className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
                   >
-                    <td className="p-4 text-slate-400 font-mono">{scan.id}</td>
+                    <td className="p-4 text-slate-400 font-mono">SCN-{scan.id}</td>
                     <td className="p-4 text-white font-medium">
-                      {scan.target}
+                      {scan.url || scan.extracted_data || scan.upi_id || "Unknown"}
                     </td>
-                    <td className="p-4 text-slate-400">{scan.type}</td>
+                    <td className="p-4 text-slate-400">{scan.url ? "Website" : scan.extracted_data ? "QR Code" : scan.upi_id ? "UPI" : "Scan"}</td>
                     <td className="p-4">
                       <span
-                        className={`px-2 py-1 rounded border border-current ${scan.color}`}
+                        className={`px-2 py-1 rounded border border-current ${getLevelColor(scan.risk_score || 0)}`}
                       >
-                        {scan.score} - {scan.level}
+                        {scan.risk_score || 0} - {getLevelText(scan.risk_score || 0)}
                       </span>
                     </td>
-                    <td className="p-4 text-slate-400">{scan.date}</td>
+                    <td className="p-4 text-slate-400">{new Date(scan.created_at).toLocaleDateString()}</td>
                     <td className="p-4 text-right">
-                      <button className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                      <button 
+                        onClick={() => handleDownload(scan.id)}
+                        className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                      >
                         View Report
                       </button>
                     </td>

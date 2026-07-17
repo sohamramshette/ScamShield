@@ -1,16 +1,57 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Shield, Mail, Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate auth
-    navigate("/dashboard");
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        // OAuth2 Password Request Form format requires form-urlencoded data
+        const formData = new URLSearchParams();
+        formData.append("username", email);
+        formData.append("password", password);
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData,
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || data.detail || "Login failed");
+        
+        // Fetch user details or use email as minimal user object
+        // In a full implementation, you'd have a /users/me endpoint
+        login(data.access_token, { id: 1, email: email });
+      } else {
+        const data = await api.post("/auth/register", { email, password });
+        // Auto-login after successful registration
+        if (data.email) {
+            setIsLogin(true);
+            setError("Registration successful! Please sign in.");
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during authentication");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,6 +85,11 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className={`p-3 text-sm rounded-lg border ${error.includes("successful") ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">
               Email Address
@@ -52,6 +98,8 @@ const Login = () => {
               <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 placeholder="you@example.com"
@@ -67,6 +115,8 @@ const Login = () => {
               <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
               <input
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 placeholder="••••••••"
@@ -76,10 +126,11 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-semibold transition-all mt-6 flex items-center justify-center gap-2 group shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl py-3 font-semibold transition-all mt-6 flex items-center justify-center gap-2 group shadow-[0_0_15px_rgba(37,99,235,0.3)]"
           >
-            {isLogin ? "Sign In" : "Sign Up"}
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            {loading ? "Please wait..." : isLogin ? "Sign In" : "Sign Up"}
+            {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
 

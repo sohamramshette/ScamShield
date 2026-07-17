@@ -10,37 +10,40 @@ import {
 import { motion } from "framer-motion";
 import { Layout } from "@/components/layout/Layout";
 
+import { api } from "@/lib/api";
+
 const WebsiteScanner = () => {
   const [url, setUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
 
-  const handleScan = (e: React.FormEvent) => {
+  const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url) return;
     setIsScanning(true);
+    setError("");
+    setResult(null);
 
-    // Simulate API Call
-    setTimeout(() => {
+    try {
+      const data = await api.post("/scanners/website", { target: url });
       setResult({
-        score: 85,
-        level: "Critical",
-        confidence: 95,
-        indicators: [
-          { severity: "critical", desc: "Domain registered 2 days ago" },
-          {
-            severity: "high",
-            desc: "Similar to well-known brand (Typosquatting)",
-          },
-          { severity: "high", desc: "Appears in VirusTotal blacklist" },
-        ],
-        explanation:
-          "This website exhibits classic signs of a phishing attempt. It was registered very recently and uses a domain name designed to mimic a trusted institution. The presence in multiple threat intelligence databases strongly suggests malicious intent.",
-        recommendation:
-          "Immediate Action Required: Do not proceed. Avoid entering any credentials or personal information.",
+        score: data.risk_score || 0,
+        level: data.status,
+        confidence: data.confidence || 0,
+        indicators: data.threat_indicators.map((ti: any) => ({
+          severity: ti.severity,
+          desc: ti.indicator + (ti.description ? `: ${ti.description}` : ""),
+        })),
+        explanation: data.ai_explanation || "No explanation provided.",
+        recommendation: data.recommendations || "No recommendations.",
+        id: data.id,
       });
+    } catch (err: any) {
+      setError(err.message || "Failed to scan website");
+    } finally {
       setIsScanning(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -60,6 +63,11 @@ const WebsiteScanner = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-sm mb-8"
         >
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleScan} className="flex gap-4">
             <div className="relative flex-1">
               <Globe className="absolute left-4 top-4 w-5 h-5 text-slate-500" />
@@ -134,7 +142,26 @@ const WebsiteScanner = () => {
                 Confidence: {result.confidence}%
               </p>
 
-              <button className="mt-6 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium border border-slate-700">
+              <button 
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/history/report/${result.id}`, {
+                      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+                    });
+                    if (!response.ok) throw new Error("Failed");
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `ScamShield_Report_${result.id}.pdf`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                  } catch (err) {
+                    alert("Error downloading report");
+                  }
+                }}
+                className="mt-6 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium border border-slate-700"
+              >
                 <Download className="w-4 h-4" /> Download PDF Report
               </button>
             </div>

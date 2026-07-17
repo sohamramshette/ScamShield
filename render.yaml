@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: scamshield-backend
+    env: docker
+    dockerContext: .
+    dockerfilePath: backend/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: scamshield-db
+          property: connectionString
+      - key: AI_MODE
+        value: "mock"
+      - key: ALLOWED_ORIGINS
+        value: "https://scamshield-frontend.onrender.com"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENVIRONMENT
+        value: "production"
+
+  - type: web
+    name: scamshield-frontend
+    env: docker
+    dockerContext: .
+    dockerfilePath: frontend/Dockerfile
+    envVars:
+      - key: VITE_API_URL
+        value: "https://scamshield-backend.onrender.com"
+
+databases:
+  - name: scamshield-db
+    databaseName: scamshield
+    user: scamshield_user
+    plan: free

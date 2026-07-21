@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Search, Filter, Download, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 
 const ScanHistory = () => {
   const [scans, setScans] = useState<any[]>([]);
@@ -36,7 +36,7 @@ const ScanHistory = () => {
 
   const handleDownload = async (scanId: number) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/history/report/${scanId}`, {
+      const response = await fetch(`${API_URL}/history/report/${scanId}`, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`
         }
@@ -127,9 +127,13 @@ const ScanHistory = () => {
                   >
                     <td className="p-4 text-slate-400 font-mono">SCN-{scan.id}</td>
                     <td className="p-4 text-white font-medium">
-                      {scan.url || scan.extracted_data || scan.upi_id || "Unknown"}
+                      {scan.target || scan.url || scan.extracted_data || scan.upi_id || "Unknown"}
                     </td>
-                    <td className="p-4 text-slate-400">{scan.url ? "Website" : scan.extracted_data ? "QR Code" : scan.upi_id ? "UPI" : "Scan"}</td>
+                    <td className="p-4 text-slate-400">
+                      {scan.type === 'website' || scan.url ? "Website" : 
+                       scan.type === 'qr' || scan.extracted_data ? "QR Code" : 
+                       scan.type === 'upi' || scan.upi_id ? "UPI" : "Scan"}
+                    </td>
                     <td className="p-4">
                       <span
                         className={`px-2 py-1 rounded border border-current ${getLevelColor(scan.risk_score || 0)}`}

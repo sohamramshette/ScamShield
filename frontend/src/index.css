@@ -4,35 +4,35 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
+    --background: 226 21% 4%; /* #07090F */
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 226 21% 7%; /* #0F1117 */
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 226 21% 7%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 219 100% 65%; /* #4F8CFF */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 258 90% 66%; /* #8B5CF6 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 226 21% 7%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 222 26% 15%; /* #1C2230 */
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%; /* #EF4444 */
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 222 26% 15%; /* #1C2230 */
+    --input: 222 26% 15%;
+    --ring: 219 100% 65%;
 
-    --radius: 0.5rem;
+    --radius: 12px;
   }
 }
 
@@ -40,7 +40,95 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
+  
+  html, body {
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    min-height: 100vh;
   }
+  
+  body::before {
+    content: "";
+    @apply fixed inset-0 pointer-events-none z-[-1];
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+  }
+
+  body::after {
+    content: "";
+    @apply fixed inset-0 pointer-events-none z-[-1] opacity-20;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer components {
+  /* Signature Layered Card */
+  .signature-panel {
+    @apply relative bg-card/80 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300;
+  }
+  
+  .signature-panel::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none rounded-2xl border border-white/10 opacity-0 transition-opacity duration-300;
+  }
+
+  .signature-panel:hover::before {
+    @apply opacity-100;
+  }
+
+  .signature-panel::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none bg-gradient-to-br from-white/5 to-transparent opacity-0 transition-opacity duration-500;
+  }
+  
+  .signature-panel:hover::after {
+    @apply opacity-100;
+  }
+
+  /* Status Chips */
+  .chip-critical {
+    @apply px-3 py-1 bg-danger/10 text-danger border border-danger/30 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-glow-danger;
+  }
+  .chip-warning {
+    @apply px-3 py-1 bg-warning/10 text-warning border border-warning/30 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+  .chip-success {
+    @apply px-3 py-1 bg-success/10 text-success border border-success/30 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+  .chip-info {
+    @apply px-3 py-1 bg-primary/10 text-primary border border-primary/30 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+.scan-line {
+  animation: scan-line 2s linear infinite;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 17, 23, 0.5);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(45, 55, 72, 0.8);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 140, 255, 0.8);
 }

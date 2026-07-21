@@ -1,0 +1,11 @@
+virustotal: 35
+google_safe_browsing: 30
+whois: 10
+ssl_inspector: 15
+urlscan: 10
+phishtank: 25
+abuseipdb: 20
+typosquatting: 15
+http_only: 10
+expired_ssl: 15
+suspicious_keywords: 20

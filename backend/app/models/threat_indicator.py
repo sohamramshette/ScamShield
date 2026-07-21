@@ -12,3 +12,4 @@ class ThreatIndicator(Base):
     indicator = Column(String, nullable=False)  # e.g., 'SSL Invalid', 'Domain Age'
     severity = Column(String, default="low")  # low, medium, high, critical
     description = Column(String)
+    evidence_category = Column(String, default="threat") # threat, reconnaissance, infrastructure, trust

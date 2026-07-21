@@ -17,8 +17,8 @@ async def test_generate_explanation_mock_safe():
 @pytest.mark.asyncio
 async def test_generate_explanation_production_no_key(monkeypatch):
     monkeypatch.setattr(settings.settings, "AI_MODE", "production")
-    monkeypatch.setattr(settings.settings, "WATSONX_API_KEY", "")
+    monkeypatch.setattr(settings.settings, "IBM_API_KEY", "")
     
     explanation, recommendation = await generate_explanation("website", "http://prod.com", 50, [])
-    assert "AI Mock Explanation" in explanation
-    assert "AI Mock Recommendation" in recommendation
+    assert "Explanation unavailable" in explanation
+    assert "Default to highest caution." in recommendation

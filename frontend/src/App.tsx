@@ -17,7 +17,11 @@ const ThreatCenter = lazy(() => import("@/pages/ThreatCenter"));
 const WebsiteScanner = lazy(() => import("@/pages/scanners/WebsiteScanner"));
 const QRScanner = lazy(() => import("@/pages/scanners/QRScanner"));
 const UPIAnalyzer = lazy(() => import("@/pages/scanners/UPIAnalyzer"));
+const EmailAnalyzer = lazy(() => import("@/pages/EmailAnalyzer"));
+const MessageAnalyzer = lazy(() => import("@/pages/MessageAnalyzer"));
+const APKAnalyzer = lazy(() => import("@/pages/APKAnalyzer"));
 const ScanHistory = lazy(() => import("@/pages/ScanHistory"));
+const Overview = lazy(() => import("@/pages/Overview"));
 const Settings = lazy(() => import("@/pages/Settings"));
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -45,55 +49,19 @@ function App() {
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Login />} />
 
-              <Route
-                path="/dashboard"
-                element={
-                  <PrivateRoute>
-                    <ThreatCenter />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/dashboard/website"
-                element={
-                  <PrivateRoute>
-                    <WebsiteScanner />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/dashboard/qr"
-                element={
-                  <PrivateRoute>
-                    <QRScanner />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/dashboard/upi"
-                element={
-                  <PrivateRoute>
-                    <UPIAnalyzer />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/dashboard/history"
-                element={
-                  <PrivateRoute>
-                    <ScanHistory />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/dashboard/settings"
-                element={
-                  <PrivateRoute>
-                    <Settings />
-                  </PrivateRoute>
-                }
-              />
+              <Route path="/dashboard" element={<PrivateRoute><Overview /></PrivateRoute>} />
+              <Route path="/dashboard/threat-center" element={<PrivateRoute><ThreatCenter /></PrivateRoute>} />
+              <Route path="/dashboard/website" element={<PrivateRoute><WebsiteScanner /></PrivateRoute>} />
+              <Route path="/dashboard/qr" element={<PrivateRoute><QRScanner /></PrivateRoute>} />
+              <Route path="/dashboard/upi" element={<PrivateRoute><UPIAnalyzer /></PrivateRoute>} />
+              <Route path="/dashboard/email" element={<PrivateRoute><EmailAnalyzer /></PrivateRoute>} />
+              <Route path="/dashboard/message" element={<PrivateRoute><MessageAnalyzer /></PrivateRoute>} />
+              <Route path="/dashboard/apk" element={<PrivateRoute><APKAnalyzer /></PrivateRoute>} />
+              <Route path="/dashboard/history" element={<PrivateRoute><ScanHistory /></PrivateRoute>} />
+              <Route path="/dashboard/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+              
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

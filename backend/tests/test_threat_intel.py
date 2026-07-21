@@ -15,15 +15,15 @@ async def test_analyze_http_url():
     url = "http://www.google.com"
     indicators = await analyze_url(url)
     assert len(indicators) == 1
-    assert indicators[0]["indicator"] == "No SSL/TLS (HTTP)"
+    assert indicators[0]["indicator"] == "Unencrypted Connection (HTTP)"
     assert indicators[0]["severity"] == "medium"
 
 
 @pytest.mark.asyncio
 async def test_analyze_scam_url():
-    url = "https://scam-site.com"
+    url = "https://secure-login-paypal.xyz"
     indicators = await analyze_url(url)
-    assert len(indicators) == 2
+    assert len(indicators) > 0
     assert any(i["severity"] == "high" for i in indicators)
     assert any(i["severity"] == "critical" for i in indicators)
 

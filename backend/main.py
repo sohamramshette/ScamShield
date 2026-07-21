@@ -1,3 +1,14 @@
+import os
+import sys
+
+# Fix for pyzbar on Windows with Python 3.8+
+if os.name == 'nt':
+    try:
+        pyzbar_path = os.path.join(os.path.dirname(sys.executable), "Lib", "site-packages", "pyzbar")
+        os.add_dll_directory(pyzbar_path)
+    except Exception:
+        pass
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -107,7 +118,7 @@ def root():
     return {"message": "Welcome to ScamShield AI API"}
 
 
-from app.api.v1 import auth, health, history, scanners
+from app.api.v1 import auth, health, history, scanners, dashboard, email, message, apk
 
 # Removed Base.metadata.create_all(bind=engine) - using Alembic now.
 
@@ -115,3 +126,7 @@ app.include_router(health.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1/auth")
 app.include_router(scanners.router, prefix="/api/v1/scanners")
 app.include_router(history.router, prefix="/api/v1/history")
+app.include_router(dashboard.router, prefix="/api/v1/dashboard")
+app.include_router(email.router, prefix="/api/v1/email")
+app.include_router(message.router, prefix="/api/v1/message")
+app.include_router(apk.router, prefix="/api/v1/apk")

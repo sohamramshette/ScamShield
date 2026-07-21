@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr
+from typing import List, Optional, Dict, Any
 
 
 # Token
@@ -42,16 +43,28 @@ class ThreatIndicatorSchema(BaseModel):
     indicator: str
     severity: str
     description: Optional[str] = None
+    evidence_category: str = "threat"
 
     class Config:
         from_attributes = True
 
+
+# Providers
+class ProviderSchema(BaseModel):
+    name: str
+    status: str
+    result: str
+    contribution: int
+    confidence: int
+    latency_ms: int
 
 # Scans
 class ScanBase(BaseModel):
     status: str
     risk_score: Optional[int]
     confidence: Optional[int]
+    analysis_mode: Optional[str] = "LIVE"
+    providers: List[ProviderSchema] = []
     ai_explanation: Optional[str]
     recommendations: Optional[str]
     created_at: datetime

@@ -9,11 +9,16 @@ from app.models.user import User
 from app.models.website_scan import WebsiteScan
 from app.schemas.all_schemas import ScanRequest, WebsiteScanResponse
 from app.services.ai_service import generate_explanation
-from app.services.risk_engine import calculate_risk_score
-from app.services.threat_intelligence import analyze_url
+from app.services.threat_orchestrator import ThreatOrchestrator
+from app.services.providers.registry import ProviderRegistry
+from app.services.evidence_engine import EvidenceEngine
 
 router = APIRouter()
 
+def get_orchestrator(db: Session) -> ThreatOrchestrator:
+    # Dynamically fetch active providers
+    providers = ProviderRegistry.get_enabled_providers()
+    return ThreatOrchestrator(db, providers)
 
 @router.post("/website", response_model=WebsiteScanResponse, tags=["Website Scanner"])
 async def scan_website(
@@ -21,7 +26,6 @@ async def scan_website(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Create pending scan
     new_scan = WebsiteScan(user_id=current_user.id, url=req.target, status="running")
     db.add(new_scan)
     db.commit()
@@ -29,34 +33,46 @@ async def scan_website(
 
     log_scan_started(str(new_scan.id), "website")
 
-    # Analyze Threat Intelligence
-    indicators_data = await analyze_url(req.target)
+    # Threat Orchestrator Phase
+    orchestrator = get_orchestrator(db)
+    provider_results = await orchestrator.analyze("url", req.target)
 
-    # Calculate Risk Score
-    risk_score = calculate_risk_score(indicators_data)
+    # Evidence Engine Phase
+    final_indicators = EvidenceEngine.process_evidence(provider_results)
 
-    # Generate AI Explanation
+    # Risk Engine Phase
+    from app.services.risk_engine import evaluate_risk
+    
+    # We pass empty offline indicators for now (since website scanner only relies on live providers)
+    risk_data = evaluate_risk(provider_results, [])
+    risk_score = risk_data["risk_score"]
+    confidence = risk_data["confidence"]
+    analysis_mode = risk_data["analysis_mode"]
+    providers = risk_data["providers"]
+
+    # AI Engine Phase
+    indicators_for_ai = [ind.model_dump() for ind in final_indicators]
     explanation, recommendation = await generate_explanation(
         scan_type="website",
         target=req.target,
         risk_score=risk_score,
-        threat_indicators=indicators_data,
+        threat_indicators=indicators_for_ai,
     )
 
     # Save Indicators
-    for ind in indicators_data:
+    for ind in final_indicators:
         db_ind = ThreatIndicator(
             scan_id=new_scan.id,
             scan_type="website",
-            indicator=ind["indicator"],
-            severity=ind["severity"],
+            indicator=ind.indicator,
+            severity=ind.severity,
         )
         db.add(db_ind)
 
     # Update Scan
     new_scan.status = "completed"
     new_scan.risk_score = risk_score
-    new_scan.confidence = 90  # Mock confidence for MVP
+    new_scan.confidence = confidence
     new_scan.ai_explanation = explanation
     new_scan.recommendations = recommendation
 
@@ -77,6 +93,8 @@ async def scan_website(
 
     response = WebsiteScanResponse.model_validate(new_scan)
     response.threat_indicators = indicators
+    response.providers = providers
+    response.analysis_mode = analysis_mode
 
     return response
 
@@ -96,16 +114,27 @@ async def scan_qr(
     db.refresh(new_scan)
 
     log_scan_started(str(new_scan.id), "qr")
-    indicators_data = await analyze_url(req.target)
-    risk_score = calculate_risk_score(indicators_data)
-    explanation, recommendation = await generate_explanation("qr", req.target, risk_score, indicators_data)
+    
+    orchestrator = get_orchestrator(db)
+    provider_results = await orchestrator.analyze("url", req.target)
+    final_indicators = EvidenceEngine.process_evidence(provider_results)
+    
+    from app.services.risk_engine import evaluate_risk
+    risk_data = evaluate_risk(provider_results, [])
+    risk_score = risk_data["risk_score"]
+    confidence = risk_data["confidence"]
+    analysis_mode = risk_data["analysis_mode"]
+    providers = risk_data["providers"]
+    
+    indicators_for_ai = [ind.model_dump() for ind in final_indicators]
+    explanation, recommendation = await generate_explanation("qr", req.target, risk_score, indicators_for_ai)
 
-    for ind in indicators_data:
-        db.add(ThreatIndicator(scan_id=new_scan.id, scan_type="qr", indicator=ind["indicator"], severity=ind["severity"]))
+    for ind in final_indicators:
+        db.add(ThreatIndicator(scan_id=new_scan.id, scan_type="qr", indicator=ind.indicator, severity=ind.severity))
 
     new_scan.status = "completed"
     new_scan.risk_score = risk_score
-    new_scan.confidence = 90
+    new_scan.confidence = confidence
     new_scan.ai_explanation = explanation
     new_scan.recommendations = recommendation
 
@@ -116,9 +145,9 @@ async def scan_qr(
     indicators = db.query(ThreatIndicator).filter(ThreatIndicator.scan_id == new_scan.id, ThreatIndicator.scan_type == "qr").all()
     response = QRScanResponse.model_validate(new_scan)
     response.threat_indicators = indicators
+    response.providers = providers
+    response.analysis_mode = analysis_mode
     return response
-
-from app.services.threat_intelligence import analyze_url, analyze_upi_id
 
 @router.post("/upi", response_model=UPIScanResponse, tags=["UPI Analyzer"])
 async def scan_upi(
@@ -134,16 +163,27 @@ async def scan_upi(
     db.refresh(new_scan)
 
     log_scan_started(str(new_scan.id), "upi")
-    indicators_data = analyze_upi_id(req.target)
-    risk_score = calculate_risk_score(indicators_data)
-    explanation, recommendation = await generate_explanation("upi", req.target, risk_score, indicators_data)
     
-    for ind in indicators_data:
-        db.add(ThreatIndicator(scan_id=new_scan.id, scan_type="upi", indicator=ind["indicator"], severity=ind["severity"]))
+    orchestrator = get_orchestrator(db)
+    provider_results = await orchestrator.analyze("upi_id", req.target)
+    final_indicators = EvidenceEngine.process_evidence(provider_results)
+    
+    from app.services.risk_engine import evaluate_risk
+    risk_data = evaluate_risk(provider_results, [])
+    risk_score = risk_data["risk_score"]
+    confidence = risk_data["confidence"]
+    analysis_mode = risk_data["analysis_mode"]
+    providers = risk_data["providers"]
+    
+    indicators_for_ai = [ind.model_dump() for ind in final_indicators]
+    explanation, recommendation = await generate_explanation("upi", req.target, risk_score, indicators_for_ai)
+    
+    for ind in final_indicators:
+        db.add(ThreatIndicator(scan_id=new_scan.id, scan_type="upi", indicator=ind.indicator, severity=ind.severity))
 
     new_scan.status = "completed"
     new_scan.risk_score = risk_score
-    new_scan.confidence = 90
+    new_scan.confidence = confidence
     new_scan.ai_explanation = explanation
     new_scan.recommendations = recommendation
 
@@ -160,9 +200,11 @@ async def scan_upi(
         upi_id=new_scan.upi_id,
         risk_score=new_scan.risk_score,
         confidence=new_scan.confidence,
+        analysis_mode=analysis_mode,
         ai_explanation=new_scan.ai_explanation,
         recommendations=new_scan.recommendations,
         threat_indicators=[{"indicator": i.indicator, "severity": i.severity} for i in indicators],
+        providers=providers,
         created_at=new_scan.created_at
     )
     return response

@@ -1,0 +1,18 @@
+Received: from compromised.host.com (compromised.com [10.0.0.5])
+	by mx.scamshield.local (Postfix) with ESMTP id 11223344
+	for <user@scamshield.ai>; Wed, 18 Jul 2026 12:20:30 +0000 (UTC)
+Authentication-Results: mx.scamshield.local;
+	dkim=none; spf=softfail; dmarc=none
+From: Microsoft 365 Team <admin@it-support-portal-01.net>
+To: user@scamshield.ai
+Subject: Password Expiring in 2 Hours
+Message-ID: <ms365@it-support-portal-01.net>
+Date: Wed, 18 Jul 2026 12:20:00 +0000
+Content-Type: text/html; charset="utf-8"
+
+<html><body>
+<p>Dear User,</p>
+<p>Your Office 365 password is set to expire in 2 hours.</p>
+<p>Please keep your current password by clicking the link below:</p>
+<p><a href="http://login.microsoftonline.com.baddomain.net/update">Keep Password Same</a></p>
+</body></html>

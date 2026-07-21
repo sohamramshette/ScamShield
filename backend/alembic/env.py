@@ -21,7 +21,29 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.config.settings import settings
 from app.database.session import Base
-
+from app.models.user import User
+from app.models.website_scan import WebsiteScan
+from app.models.qr_scan import QRScan
+from app.models.upi_scan import UPIScan
+from app.models.threat_indicator import ThreatIndicator
+from app.models.report import Report
+from app.models.threat_cache import ThreatCache
+from app.models.provider_health import ProviderHealth
+from app.models.email_scan import EmailScan
+from app.models.email_attachment import EmailAttachment
+from app.models.email_url import EmailURL, EmailHop
+from app.models.message_scan import MessageScan
+from app.models.message_url import MessageURL
+from app.models.message_phone import MessagePhone
+from app.models.message_ioc import MessageIOC
+from app.models.apk_scan import APKScan
+from app.models.apk_permission import APKPermission
+from app.models.apk_component import APKComponent
+from app.models.apk_certificate import APKCertificate
+from app.models.apk_ioc import APKIOC
+from app.models.apk_library import APKLibrary
+from app.models.apk_yara import APKYaraMatch
+from app.models.apk_mitre import APKMitre
 target_metadata = Base.metadata
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 

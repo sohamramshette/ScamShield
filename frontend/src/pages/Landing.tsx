@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   Shield,
   ShieldAlert,
@@ -9,7 +9,15 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { useAuth } from "@/context/AuthContext";
+
 const Landing = () => {
+  const { isAuthenticated } = useAuth();
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden">
       {/* Background Glows */}
@@ -18,10 +26,9 @@ const Landing = () => {
 
       {/* Navbar Placeholder */}
       <nav className="absolute top-0 w-full p-6 flex justify-between items-center z-10 max-w-7xl">
-        <div className="flex items-center gap-2">
-          <Shield className="w-8 h-8 text-blue-500" />
-          <span className="text-xl font-bold tracking-tight text-white">
-            ScamShield AI
+        <div className="flex items-center gap-2 z-10 cursor-pointer">
+          <span className="text-3xl font-black font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
+            ScamShield
           </span>
         </div>
         <div className="flex gap-4">

@@ -2,21 +2,25 @@ import { useState } from "react";
 import {
   Globe,
   Search,
-  ShieldAlert,
   AlertTriangle,
-  FileText,
   Download,
+  TerminalSquare,
+  Network
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Layout } from "@/components/layout/Layout";
-
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
+import { RiskMeter } from "@/components/ui/RiskMeter";
+import { InvestigationTimeline } from "@/components/ui/InvestigationTimeline";
+import type { TimelineStep } from "@/components/ui/InvestigationTimeline";
+import { AIInvestigationCard } from "@/components/ui/AIInvestigationCard";
 
 const WebsiteScanner = () => {
   const [url, setUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+  const [steps, setSteps] = useState<TimelineStep[]>([]);
 
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,187 +28,198 @@ const WebsiteScanner = () => {
     setIsScanning(true);
     setError("");
     setResult(null);
+    
+    setSteps([
+      { label: "Target Acquisition", status: "active" },
+      { label: "DNS & Cert Analysis", status: "pending" },
+      { label: "Threat Intel Sync", status: "pending" },
+      { label: "Granite AI Inference", status: "pending" },
+    ]);
 
     try {
+      // Simulate stepped UI progression while waiting for the single API endpoint
+      setTimeout(() => setSteps([
+        { label: "Target Acquisition", status: "completed" },
+        { label: "DNS & Cert Analysis", status: "active" },
+        { label: "Threat Intel Sync", status: "pending" },
+        { label: "Granite AI Inference", status: "pending" },
+      ]), 800);
+
+      setTimeout(() => setSteps([
+        { label: "Target Acquisition", status: "completed" },
+        { label: "DNS & Cert Analysis", status: "completed" },
+        { label: "Threat Intel Sync", status: "active" },
+        { label: "Granite AI Inference", status: "pending" },
+      ]), 1600);
+      
       const data = await api.post("/scanners/website", { target: url });
-      setResult({
-        score: data.risk_score || 0,
-        level: data.status,
-        confidence: data.confidence || 0,
-        indicators: data.threat_indicators.map((ti: any) => ({
-          severity: ti.severity,
-          desc: ti.indicator + (ti.description ? `: ${ti.description}` : ""),
-        })),
-        explanation: data.ai_explanation || "No explanation provided.",
-        recommendation: data.recommendations || "No recommendations.",
-        id: data.id,
-      });
+      
+      setSteps([
+        { label: "Target Acquisition", status: "completed" },
+        { label: "DNS & Cert Analysis", status: "completed" },
+        { label: "Threat Intel Sync", status: "completed" },
+        { label: "Granite AI Inference", status: "active" },
+      ]);
+      
+      setTimeout(() => {
+        setSteps([
+          { label: "Target Acquisition", status: "completed" },
+          { label: "DNS & Cert Analysis", status: "completed" },
+          { label: "Threat Intel Sync", status: "completed" },
+          { label: "Granite AI Inference", status: "completed" },
+        ]);
+        
+        setResult({
+          score: data.risk_score || 0,
+          level: data.status,
+          confidence: data.confidence || 0,
+          indicators: data.threat_indicators.map((ti: any) => ({
+            severity: ti.severity,
+            desc: ti.indicator + (ti.description ? `: ${ti.description}` : ""),
+          })),
+          aiData: {
+            family: data.status === "Malicious" ? "Phishing/Malware Domain" : "Clean Domain",
+            threat_type: data.status,
+            behavior: data.ai_explanation || "No abnormal behavior detected.",
+            confidence: data.confidence || 95,
+            impact: data.risk_score >= 50 ? "High risk of credential theft or malware delivery." : "Safe to browse.",
+            recommendation: data.recommendations || "Proceed with caution."
+          },
+          id: data.id,
+        });
+        setIsScanning(false);
+      }, 800);
+
     } catch (err: any) {
       setError(err.message || "Failed to scan website");
-    } finally {
       setIsScanning(false);
     }
   };
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
-            Website Scanner
-          </h1>
-          <p className="text-slate-400">
-            Analyze URLs for phishing, malware, and fraudulent activities.
-          </p>
+      <div className="max-w-[1400px] mx-auto flex flex-col gap-10">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative">
+          <div className="absolute top-0 right-10 w-64 h-64 bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <Network className="w-5 h-5 text-primary" />
+              <span className="text-primary font-mono text-[10px] font-bold uppercase tracking-widest">Network Intelligence Module</span>
+            </div>
+            <h1 className="text-4xl font-heading font-black text-white tracking-tighter">
+              Domain Reconnaissance
+            </h1>
+            <p className="text-muted-foreground font-sans mt-2 text-lg">Analyze URLs for phishing, malware, and infrastructure anomalies.</p>
+          </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl backdrop-blur-sm mb-8"
-        >
-          {error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-          <form onSubmit={handleScan} className="flex gap-4">
-            <div className="relative flex-1">
-              <Globe className="absolute left-4 top-4 w-5 h-5 text-slate-500" />
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com"
-                className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-lg"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isScanning}
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] flex items-center gap-2"
-            >
-              {isScanning ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Search className="w-5 h-5" />
-              )}
-              {isScanning ? "Analyzing..." : "Scan URL"}
-            </button>
-          </form>
-        </motion.div>
-
-        {result && (
+        {/* Input Surface */}
+        {!result && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="signature-panel p-8 max-w-3xl mx-auto w-full relative z-10 mt-10"
           >
-            {/* Score Card */}
-            <div className="col-span-1 bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-              <div className="relative w-32 h-32 flex items-center justify-center mb-4">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="60"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    fill="transparent"
-                    className="text-slate-800"
-                  />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="60"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    fill="transparent"
-                    strokeDasharray={377}
-                    strokeDashoffset={377 - (377 * result.score) / 100}
-                    className="text-red-500 transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl font-bold text-white">
-                    {result.score}
-                  </span>
-                  <span className="text-xs text-slate-400 uppercase tracking-wider">
-                    Score
-                  </span>
-                </div>
+            {error && (
+              <div className="mb-6 p-4 bg-danger/10 border border-danger/20 text-danger rounded-xl text-sm flex items-center gap-3 font-medium">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                {error}
               </div>
-              <h3 className="text-xl font-bold text-red-400 mb-1">
-                {result.level}
-              </h3>
-              <p className="text-slate-400 text-sm">
-                Confidence: {result.confidence}%
-              </p>
-
-              <button 
-                onClick={async () => {
-                  try {
-                    const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/history/report/${result.id}`, {
-                      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-                    });
-                    if (!response.ok) throw new Error("Failed");
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `ScamShield_Report_${result.id}.pdf`;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                  } catch (err) {
-                    alert("Error downloading report");
-                  }
-                }}
-                className="mt-6 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium border border-slate-700"
+            )}
+            
+            <form onSubmit={handleScan} className="flex flex-col gap-6">
+              <div className="relative group">
+                <Globe className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Enter target URL (e.g. https://suspicious-domain.com)"
+                  className="w-full bg-black/40 border border-border rounded-2xl py-6 pl-16 pr-6 text-white focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all text-lg font-mono placeholder:font-sans"
+                  required
+                  disabled={isScanning}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isScanning}
+                className="w-full py-5 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 disabled:opacity-50 text-white rounded-2xl font-bold transition-all shadow-glow flex justify-center items-center gap-3 text-lg relative overflow-hidden"
               >
-                <Download className="w-4 h-4" /> Download PDF Report
+                {isScanning && <div className="absolute inset-0 bg-white/20 scan-line" />}
+                <Search className="w-6 h-6 relative z-10" />
+                <span className="relative z-10">{isScanning ? "Engaging Target..." : "Initiate Reconnaissance"}</span>
               </button>
-            </div>
-
-            {/* Explanations & Indicators */}
-            <div className="col-span-1 md:col-span-2 space-y-6">
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-lg font-bold text-white">
-                    AI Explanation
-                  </h2>
-                </div>
-                <p className="text-slate-300 leading-relaxed mb-4">
-                  {result.explanation}
-                </p>
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-start gap-3">
-                  <ShieldAlert className="w-5 h-5 shrink-0" />
-                  <p className="font-medium">{result.recommendation}</p>
-                </div>
-              </div>
-
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-                <h2 className="text-lg font-bold text-white mb-4">
-                  Threat Indicators
-                </h2>
-                <div className="space-y-3">
-                  {result.indicators.map((ind: any, i: number) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 p-3 bg-slate-950/50 rounded-lg border border-slate-800"
-                    >
-                      <AlertTriangle
-                        className={`w-5 h-5 ${ind.severity === "critical" ? "text-red-500" : "text-amber-500"}`}
-                      />
-                      <span className="text-slate-300">{ind.desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            </form>
           </motion.div>
         )}
+
+        {/* Scanning Timeline */}
+        <AnimatePresence>
+          {isScanning && steps.length > 0 && !result && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="max-w-4xl mx-auto w-full"
+            >
+              <InvestigationTimeline steps={steps} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Results Area */}
+        <AnimatePresence>
+          {result && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            >
+              {/* Left Column: Risk & Intel */}
+              <div className="lg:col-span-4 flex flex-col gap-8">
+                <div className="signature-panel flex flex-col items-center justify-center min-h-[300px]">
+                  <RiskMeter score={result.score} />
+                </div>
+                
+                <div className="signature-panel p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-sm font-mono font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                      <TerminalSquare className="w-4 h-4 text-secondary" /> Network IOCs
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {result.indicators.length > 0 ? result.indicators.map((ind: any, i: number) => (
+                      <div key={i} className="flex items-start gap-3 p-3 bg-black/30 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                        <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0 ${ind.severity === "critical" ? "text-danger" : ind.severity === "high" ? "text-warning" : "text-primary"}`} />
+                        <span className="text-slate-300 font-mono text-xs break-words">{ind.desc}</span>
+                      </div>
+                    )) : (
+                      <div className="p-4 bg-success/5 border border-success/20 rounded-xl flex items-center justify-center">
+                        <span className="text-success text-xs font-mono font-bold uppercase tracking-widest">No Malicious IOCs Detected</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => window.open(`${API_URL}/history/report/${result.id}?format=pdf`, "_blank")}
+                  className="w-full py-4 bg-card hover:bg-white/5 border border-border text-white rounded-xl flex items-center justify-center gap-3 transition-colors text-sm font-bold tracking-wide uppercase"
+                >
+                  <Download className="w-5 h-5 text-primary" /> Export Intelligence Brief
+                </button>
+              </div>
+
+              {/* Right Column: AI Analysis */}
+              <div className="lg:col-span-8 flex flex-col gap-8">
+                <AIInvestigationCard data={result.aiData} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </Layout>
   );

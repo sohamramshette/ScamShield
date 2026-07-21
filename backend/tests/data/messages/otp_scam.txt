@@ -1,0 +1,3 @@
+Dear Customer, Your bank account has been blocked due to suspicious activity. Please verify your KYC to unblock it. 
+Click here: http://update-kyc-hdfc-auth.com/verify
+OTP for verification: 492015. Do not share this with anyone.

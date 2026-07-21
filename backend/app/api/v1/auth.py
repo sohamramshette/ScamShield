@@ -38,7 +38,7 @@ def get_current_user(
 
 
 @router.post("/register", response_model=UserResponse, tags=["Authentication"])
-@limiter.limit("5/minute")
+@limiter.limit("60/minute")
 def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
@@ -53,7 +53,7 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token, tags=["Authentication"])
-@limiter.limit("10/minute")
+@limiter.limit("60/minute")
 def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),

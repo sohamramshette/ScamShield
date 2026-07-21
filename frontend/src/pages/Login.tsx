@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Shield, Mail, Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,7 +11,12 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  
+  // Issue 3: Redirect authenticated users away from Login page
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +30,7 @@ const Login = () => {
         formData.append("username", email);
         formData.append("password", password);
         
-        const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"}/auth/login`, {
+        const response = await fetch(`${API_URL}/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -63,8 +68,7 @@ const Login = () => {
         to="/"
         className="absolute top-8 left-8 flex items-center gap-2 text-white hover:text-blue-400 transition-colors"
       >
-        <Shield className="w-8 h-8 text-blue-500" />
-        <span className="text-xl font-bold">ScamShield AI</span>
+        <span className="text-3xl font-black font-mono tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">ScamShield</span>
       </Link>
 
       <motion.div

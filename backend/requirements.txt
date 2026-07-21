@@ -22,7 +22,7 @@ Pillow>=10.2.0
 phonenumbers>=8.13.0
 opencv-python-headless>=4.8.0
 easyocr>=1.7.1
-paddleocr>=2.7.0.3
+paddleocr>=3.7.0
 paddlepaddle>=2.6.1
 
 androguard>=3.4.0-alpha1

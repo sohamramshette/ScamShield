@@ -1,6 +1,5 @@
 import { Link, Navigate } from "react-router-dom";
 import {
-  Shield,
   ShieldAlert,
   Zap,
   Lock,

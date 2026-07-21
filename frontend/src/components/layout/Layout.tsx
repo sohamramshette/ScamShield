@@ -54,7 +54,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         const data = await api.get("/history/");
         const recent = (data || []).slice(0, 5).map((scan: any) => ({
           id: scan.id,
-          title: `${scan.scan_type.toUpperCase()} Scan Completed`,
+          title: `${(scan.scan_type || 'Unknown').toUpperCase()} Scan Completed`,
           description: `Target: ${scan.target_summary || 'Unknown'} - Risk Score: ${scan.risk_score}`,
           time: new Date(scan.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         }));

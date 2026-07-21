@@ -53,70 +53,35 @@ class ImagePreprocessor:
         return deskewed
 
 
-class PaddleOCRProvider(OCRProvider):
+class TesseractOCRProvider(OCRProvider):
     def __init__(self):
         try:
-            from paddleocr import PaddleOCR
-            # Use English, disable debug logging
-            self.ocr = PaddleOCR(use_angle_cls=True, lang='en')
+            import pytesseract
+            self.pytesseract = pytesseract
         except ImportError:
-            logger.warning("PaddleOCR not installed or failed to initialize.")
-            self.ocr = None
+            logger.warning("Pytesseract not installed.")
+            self.pytesseract = None
 
     def extract_text(self, image_bytes: bytes) -> str:
-        if not self.ocr:
-            raise RuntimeError("PaddleOCR is not available")
+        if not self.pytesseract:
+            raise RuntimeError("Pytesseract is not available")
             
         img = ImagePreprocessor.preprocess(image_bytes)
-        result = self.ocr.ocr(img, cls=True)
-        
-        if not result or not result[0]:
-            return ""
-            
-        extracted_text = []
-        for line in result[0]:
-            text, confidence = line[1]
-            extracted_text.append(text)
-            
-        return "\n".join(extracted_text)
-
-
-class EasyOCRProvider(OCRProvider):
-    def __init__(self):
-        try:
-            import easyocr
-            self.reader = easyocr.Reader(['en'], gpu=False, verbose=False)
-        except ImportError:
-            logger.warning("EasyOCR not installed or failed to initialize.")
-            self.reader = None
-
-    def extract_text(self, image_bytes: bytes) -> str:
-        if not self.reader:
-            raise RuntimeError("EasyOCR is not available")
-            
-        img = ImagePreprocessor.preprocess(image_bytes)
-        result = self.reader.readtext(img, detail=0, paragraph=True)
-        return "\n".join(result)
+        result = self.pytesseract.image_to_string(img)
+        return result
 
 
 class OCRService:
     def __init__(self):
         self.providers = []
         
-        # Try paddle OCR first
-        paddle = PaddleOCRProvider()
-        if paddle.ocr:
-            self.providers.append(paddle)
-            
-        # Try easy ocr second
-        easy = EasyOCRProvider()
-        if easy.reader:
-            self.providers.append(easy)
+        tesseract = TesseractOCRProvider()
+        if tesseract.pytesseract:
+            self.providers.append(tesseract)
 
     def extract_text(self, image_bytes: bytes) -> str:
         if not self.providers:
-            # Fallback if neither is installed, maybe return mock or raise
-            raise RuntimeError("No OCR providers available. Install paddleocr or easyocr.")
+            raise RuntimeError("No OCR providers available. Install pytesseract and tesseract-ocr.")
             
         for provider in self.providers:
             try:

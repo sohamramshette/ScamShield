@@ -1,57 +1,164 @@
-# ScamShield AI
+# 🛡️ ScamShield AI
 
-A modern, production-ready, AI-powered cybersecurity platform that helps users detect scams before they become victims.
+> AI-Powered Cyber Fraud Detection & Prevention Platform
 
-## Features (Phase 1)
-- **Website Scanner**: Deep URL analysis, SSL checking, and Threat Intel integration (VirusTotal & Google Safe Browsing).
-- **QR Scanner**: Decodes and analyzes malicious QR links.
-- **UPI Analyzer**: Checks UPI IDs for known fraud records.
-- **Threat Center Dashboard**: Visualizations of scan history, active alerts, and analytics.
+ScamShield AI is a modern cybersecurity platform that helps users detect phishing websites, malicious QR codes, suspicious UPI IDs, and other online frauds using AI-powered analysis and threat intelligence.
 
-## Tech Stack
-- **Frontend**: React 19, TypeScript, Vite, TailwindCSS, Framer Motion
-- **Backend**: FastAPI (Python 3.11), SQLAlchemy 2.0, PostgreSQL
-- **AI Engine**: IBM WatsonX API (via `ai_service.py`)
-- **Infrastructure**: Docker, Docker Compose, Nginx
+---
 
-## Local Setup & Deployment
+## ✨ Features
 
-1. **Clone and Configure**
-   ```bash
-   cp backend/.env.example backend/.env
-   # Add your JWT_SECRET and AI API keys
-   ```
+- 🌐 Website Security Scanner
+- 📱 QR Code Security Analysis
+- 💳 UPI ID Risk Detection
+- 🤖 AI-Powered Threat Explanation
+- 📊 Security Dashboard
+- 📈 Safe Score & Risk Assessment
+- 📜 Scan History
+- 📄 PDF Report Generation
+- 🔐 JWT Authentication
+- 👤 User Account Management
+- 📱 Fully Responsive UI
+- 🌙 Modern Glassmorphism Interface
 
-2. **Run via Docker Compose (Recommended)**
-   ```bash
-   docker compose up --build -d
-   ```
-   - Frontend: `http://localhost:5173`
-   - Backend API: `http://localhost:8000`
-   - API Docs: `http://localhost:8000/docs`
+---
 
-3. **Run DB Migrations (Alembic)**
-   ```bash
-   docker compose exec backend alembic upgrade head
-   ```
+## 🛠️ Tech Stack
 
-## Development Environment
-- Code Formatting: `black`, `ruff` (Backend), `prettier`, `oxlint` (Frontend)
-- Testing: `pytest` with `pytest-cov` (Backend)
+### Frontend
 
-Run tests locally:
-```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt -r requirements-dev.txt
-pytest --cov=app tests/
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui
+- Framer Motion
+
+### Backend
+
+- FastAPI
+- PostgreSQL
+- SQLAlchemy
+- JWT Authentication
+- ReportLab
+
+### AI & Security
+
+- IBM Granite (Watsonx)
+- Threat Intelligence Integration
+- Risk Scoring Engine
+
+### DevOps
+
+- Docker
+- Docker Compose
+- GitHub
+
+---
+
+## 📂 Project Structure
+
+```
+ScamShield-AI/
+│
+├── frontend/
+├── backend/
+├── database/
+├── docs/
+├── docker-compose.yml
+└── README.md
 ```
 
-## Security Best Practices Built-In
-- CSP & Security Headers Middleware
-- Strict CORS rules
-- `slowapi` Rate Limiting
-- JWT tokens with Refresh flow
-- Bcrypt password hashing
-- Secure DB Connection Pooling
+---
+
+## 🚀 Getting Started
+
+### Clone Repository
+
+```bash
+git clone https://github.com/yourusername/ScamShield-AI.git
+cd ScamShield-AI
+```
+
+### Run with Docker
+
+```bash
+docker compose up --build
+```
+
+### Frontend
+
+```
+http://localhost:5173
+```
+
+### Backend API
+
+```
+http://localhost:8000
+```
+
+---
+
+## 🔍 Core Modules
+
+- Website Scanner
+- QR Scanner
+- UPI Analyzer
+- Threat Intelligence Engine
+- AI Explanation Engine
+- Authentication Service
+- Report Generator
+- Scan History
+
+---
+
+## 📸 Screenshots
+
+Add screenshots here.
+
+```
+/screenshots/dashboard.png
+/screenshots/scanner.png
+/screenshots/report.png
+```
+
+---
+
+## 🔒 Security
+
+ScamShield AI follows secure development practices including:
+
+- JWT Authentication
+- Password Hashing
+- Rate Limiting
+- Security Headers
+- CORS Protection
+- Input Validation
+
+---
+
+## 📈 Future Enhancements
+
+- Browser Extension
+- Mobile Application
+- Email Scam Detection
+- SMS Scam Detection
+- Dark Web Monitoring
+- Live Threat Feed
+- Community Scam Reporting
+
+---
+
+## 👨‍💻 Author
+
+**Soham Balaji Ramshette**
+
+- GitHub: https://github.com/SohamRamshette
+- LinkedIn: *(Add your profile)*
+
+---
+
+## ⭐ Support
+
+If you found this project useful, consider giving it a **Star** on GitHub.

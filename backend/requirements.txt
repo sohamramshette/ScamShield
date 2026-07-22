@@ -18,7 +18,7 @@ python-whois
 
 extract-msg>=0.47.0
 pyzbar>=0.1.9
-Pillow>=10.2.0
+Pillow>=12.3.0
 phonenumbers>=8.13.0
 opencv-python-headless>=4.8.0
 easyocr>=1.7.1

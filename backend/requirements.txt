@@ -28,6 +28,6 @@ paddlepaddle>=2.6.1
 androguard>=3.4.0-alpha1
 yara-python>=3.11.0
 python-magic>=0.4.27
-lief>=0.14.0
+lief>=1.0.0
 vt-py>=0.18.0
 

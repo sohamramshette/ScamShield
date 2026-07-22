@@ -25,7 +25,7 @@ easyocr>=1.7.1
 paddleocr>=2.7.0.3
 paddlepaddle>=2.6.1
 
-androguard>=3.4.0-alpha1
+androguard>=4.1.4
 yara-python>=3.11.0
 python-magic>=0.4.27
 lief>=0.14.0
